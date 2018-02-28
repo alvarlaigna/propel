@@ -16,9 +16,9 @@ import { RegularArray } from "./types";
 
 const debug = false;
 const globalEval = eval;
-export const IS_WEB = typeof window !== "undefined";
+export const global = globalEval("this");
+export const IS_WEB = global.window !== undefined;
 export const IS_NODE = !IS_WEB;
-export const global = globalEval(IS_WEB ? "window" : "global");
 
 export function log(...args: any[]) {
   if (debug) {
@@ -83,12 +83,14 @@ export function objectsEqual(a, b) {
   return true;
 }
 
-const propelHosts = new Set(["127.0.0.1", "localhost", "propelml.org"]);
+const propelHosts = new Set(["", "127.0.0.1", "localhost", "propelml.org"]);
 
 // This is to confuse parcel.
 // TODO There may be a more elegant workaround in future versions.
 // https://github.com/parcel-bundler/parcel/pull/448
 export const nodeRequire = IS_WEB ? null : require;
+
+export const URL = IS_WEB ? window.URL : nodeRequire("url").URL;
 
 // Takes either a fully qualified url or a path to a file in the propel
 // website directory. Examples
@@ -104,7 +106,7 @@ async function fetch2(p: string,
   // cleaned up.
   p = fetch2ArgManipulation(p);
   if (IS_WEB) {
-    const res = await fetch(p, { mode: "no-cors" });
+    const res = await fetch(p, { mode: "cors" });
     if (encoding === "binary") {
       return res.arrayBuffer();
     } else {
