@@ -70,6 +70,24 @@ export function delay(t: number): Promise<void> {
   });
 }
 
+export interface Resolvable<T> extends Promise<T> {
+  resolve: (value?: T) => void;
+  reject: (value: any) => void;
+}
+
+// Creates a Promise with the `reject` and `resolve` functions placed as
+// methods on the promise object itself. It allows you to do:
+//
+//   const p = createResolvable();
+//   p.resolve();
+export function createResolvable<T>(): Resolvable<T> {
+  let methods;
+  const promise = new Promise((resolve, reject) => {
+    methods = { resolve, reject };
+  }) as Resolvable<T>;
+  return Object.assign(promise, methods);
+}
+
 export function objectsEqual(a, b) {
   const aProps = Object.getOwnPropertyNames(a);
   const bProps = Object.getOwnPropertyNames(b);

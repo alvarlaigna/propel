@@ -13,6 +13,8 @@
    limitations under the License.
  */
 
+import { createResolvable, Resolvable } from "../src/util";
+
 export type RpcHandler = (...args: any[]) => any;
 export type RpcHandlers = { [name: string]: RpcHandler };
 
@@ -34,23 +36,11 @@ interface ReturnMessage extends Message {
   exception?: any;
 }
 
-interface Resolver<T> extends Promise<T> {
-  resolve: (value?: T) => void;
-  reject: (value: any) => void;
-}
-
-function createResolver<T>(): Resolver<T> {
-  let methods;
-  const promise = new Promise((...args) => { methods = args; }) as Resolver<T>;
-  [promise.resolve, promise.reject] = methods;
-  return promise;
-}
-
 export class RpcChannel {
-  private ready = createResolver<void>();
+  private ready = createResolvable<void>();
   private readonly unique = Math.random();
   private counter = 0;
-  private returnHandlers = new Map<string, Resolver<any>>();
+  private returnHandlers = new Map<string, Resolvable<any>>();
 
   constructor(private remote: Window, private handlers: RpcHandlers) {
     window.addEventListener("message", event => this.onMessage(event));
@@ -68,7 +58,7 @@ export class RpcChannel {
       args
     };
 
-    const resolver = createResolver<any>();
+    const resolver = createResolvable<any>();
     this.returnHandlers.set(id, resolver);
 
     try {
@@ -81,7 +71,6 @@ export class RpcChannel {
 
   private onMessage(event: MessageEvent): void {
     const { type } = event.data;
-    console.log(document.baseURI, event.data);
     switch (type) {
       case "syn":
       case "ack":

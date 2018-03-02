@@ -31,7 +31,6 @@ import { RpcChannel } from "./nb_rpc_channel";
 
 const cellTable = new Map<number, Cell>(); // Maps id to Cell.
 let nextCellId = 1;
-let lastExecutedCellId = null;
 
 // Given a cell's id, which can either be an integer or
 // a string of the form "cell5" (where 5 is the id), look up
@@ -280,7 +279,6 @@ export class Cell extends Component<CellProps, CellState> {
     const classList = (this.input.parentNode as HTMLElement).classList;
     classList.add("notebook-cell-running");
 
-    lastExecutedCellId = this.id;
     await sandbox().call("runCell", this.code, this.id);
 
     classList.add("notebook-cell-updating");
@@ -364,29 +362,6 @@ export class FixedCell extends Component<FixedProps, CellState> {
         h("pre", { }, normalizeCode(this.props.code)),
       )
     );
-  }
-}
-
-// This is to handle asynchronous output situations.
-// Try to guess which cell we are executing in by looking at the stack trace.
-// If there isn't a cell in there, then default to the lastExecutedCellId.
-export function guessCellId(): number {
-  const stacktrace = (new Error()).stack.split("\n");
-  for (let i = stacktrace.length - 1; i >= 0; --i) {
-    const line = stacktrace[i];
-    const m = line.match(/__cell(\d+)__/);
-    if (m) return Number(m[1]);
-  }
-  return lastExecutedCellId;
-}
-
-export function outputEl(): Element {
-  const id = guessCellId();
-  const cell = lookupCell(id);
-  if (cell) {
-    return cell.output;
-  } else {
-    return null;
   }
 }
 
